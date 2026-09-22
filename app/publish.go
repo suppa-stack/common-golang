@@ -7,7 +7,9 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"net/url"
 	"strconv"
+	"strings"
 
 	"github.com/invopop/ctxi18n"
 	"suppa-ahg-stack/common-golang/serverutil"
@@ -278,14 +280,38 @@ func (a *App[TConfig, TQueries, TSessionService, TSseNames]) PublishDomUpdate(ra
 	}
 
 	active := a.activeSessionIDs(userID)
+	// The page must match, not just the selector: #page-content exists on every
+	// page, so filtering on the selector alone pushes this fragment into the
+	// user's other tabs and makes the client rewrite their URL to rawPath.
+	targetPage := normalizePagePath(rawPath)
 	a.publishEvent(userID, sse.Event{Type: "app-event", Data: eventData}, active, func(conn *sse.Connection) bool {
 		if !conn.HasPageContext() {
 			return true
 		}
-		_, selectors, _ := conn.PageContext()
-		return selectors[selector]
+		page, selectors, _ := conn.PageContext()
+		return selectors[selector] && normalizePagePath(page) == targetPage
 	})
 	return true
+}
+
+// normalizePagePath reduces a path to the form used to decide whether a
+// connection is on the page a fragment was rendered for. The query string is
+// dropped and the trailing slash is canonical, because a connection's stored
+// page comes from several sources that disagree on both: the Referer at
+// connect time, the raw payload.Path of /uih, and the already-normalized path
+// used to publish. Dynamic segments are preserved, so two tabs on different
+// records of the same route stay distinct.
+func normalizePagePath(path string) string {
+	if u, err := url.Parse(path); err == nil {
+		path = u.Path
+	}
+	if path == "" {
+		return "/"
+	}
+	if !strings.HasSuffix(path, "/") {
+		path += "/"
+	}
+	return path
 }
 
 // PublishModalToast sends a toast event scoped to a modal container.
