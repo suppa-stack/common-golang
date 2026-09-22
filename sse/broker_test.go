@@ -291,13 +291,15 @@ func TestConcurrentPublishDisconnectDoesNotPanic(t *testing.T) {
 
 	const numSubs = 50
 	var cleanups []context.CancelFunc
+	ids := make([]uint64, 0, numSubs)
 	for i := 0; i < numSubs; i++ {
-		_, _, cleanup := b.Subscribe(ctx, fmt.Sprintf("user-%d", i%5))
+		id, _, cleanup := b.Subscribe(ctx, fmt.Sprintf("user-%d", i%5))
+		ids = append(ids, id)
 		cleanups = append(cleanups, cleanup)
 	}
 
 	var wg sync.WaitGroup
-	wg.Add(2)
+	wg.Add(3)
 
 	// Publisher goroutine.
 	go func() {
@@ -305,7 +307,18 @@ func TestConcurrentPublishDisconnectDoesNotPanic(t *testing.T) {
 		for i := 0; i < 2000; i++ {
 			b.Publish(Event{Data: []byte("broadcast")})
 			b.PublishToUser(fmt.Sprintf("user-%d", i%5), Event{Data: []byte("user")})
-			b.PublishToConnection(uint64(i%numSubs)+1, Event{Data: []byte("direct")})
+			b.PublishToConnection(ids[i%numSubs], Event{Data: []byte("direct")})
+		}
+	}()
+
+	// Page-context goroutine: /unh and /uih update the page context of a live
+	// connection while fragments are being published to it.
+	go func() {
+		defer wg.Done()
+		for i := 0; i < 2000; i++ {
+			b.UpdateConnectionPage(ids[i%numSubs], fmt.Sprintf("/page-%d/", i%7),
+				map[string]bool{"#page-content": true}, map[string]bool{"page": true})
+			b.UpdateConnectionSessionID(ids[i%numSubs], fmt.Sprintf("rotated-%d", i%3))
 		}
 	}()
 
@@ -330,7 +343,8 @@ func TestConcurrentPublishDisconnectDoesNotPanic(t *testing.T) {
 		t.Fatal("concurrency test timed out")
 	}
 
-	// If we get here without a panic, the race fix holds.
+	// If we get here without a panic (and clean under -race), publishing
+	// outside the lock is safe against concurrent updates and disconnects.
 }
 
 func TestUpdateConnectionSessionID(t *testing.T) {

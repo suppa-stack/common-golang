@@ -86,6 +86,15 @@ The app relies on the caller to provide session/CSRF/auth implementations via in
 * `Handler` — HTTP handler that subscribes a client to one or more `EventHandler` streams and writes SSE events.
 * Supports active-session filtering, per-connection filters, page-context tracking, and session/user ID re-association (used when auth rotates tokens while a connection stays open).
 
+Delivery model, which callers must not work around:
+
+* **One mailbox per HTTP connection.** The handler allocates the channel once and every broker of that connection joins it via `SubscribeWithMailbox`, so there is a single backpressure queue, no forwarding goroutine and no merge step per broker. `SubscribeWithConnectionID` still allocates its own channel and is kept for callers outside the handler.
+* **Fan-out happens outside the lock.** `Publish*` snapshots its target connections under `mu.RLock`, releases, then sends. `PublishOptions.Filter` therefore runs *without* the broker lock and must stay cheap and non-blocking. Connection metadata (`PageContext`, `SessionID`, `UserID`) is held in atomic pointers for exactly this reason.
+* **Mailboxes are never closed.** Publishers send without holding `mu`, so closing would race them into a panic. Readers stop on context cancellation.
+* **A dropped event queues a resync.** When a mailbox is full the event is discarded and a single `system.resync` app-event replaces the queue head; the client re-requests its current page rather than replaying stale DOM fragments. Use `Stats()` and `ConnectionDrops()` for visibility — drops are also logged once per disconnect.
+* **Session rotation.** `UpdateSessionID(old, new)` moves every connection of a session and needs no `X-SSE-Connection-ID`; prefer it over `UpdateConnectionSessionID` on rotation paths that have no such header. Forgetting to call it leaves connections indexed under a dead session, which the active-session filter then silently excludes from every publish.
+* **Server timeouts.** The handler clears its read deadline (a `Server.ReadTimeout` firing mid-stream cancels the request context) and sets a rolling per-frame write deadline, so `ReadTimeout`/`WriteTimeout` can stay enabled process-wide.
+
 ### `serverutil`
 
 * `ServerUtil` — creates and runs `http.Server` with graceful shutdown.
