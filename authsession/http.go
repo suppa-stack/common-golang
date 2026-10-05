@@ -45,9 +45,7 @@ type HTTPOptions struct {
 	Logger           HTTPLogger
 	ConnectionBroker ConnectionSessionUpdater
 	HandleError      func(http.ResponseWriter, *http.Request, int)
-	// EnsureKnownFailureStatus lets applications preserve their public routing
-	// contract when local role resolution or auth_app validation fails. Zero
-	// keeps the safe default of 500.
+	// Deprecated: dependency failures always return 503. Kept for source compatibility.
 	EnsureKnownFailureStatus int
 }
 
@@ -74,7 +72,7 @@ func RequireAuth(next http.Handler, options HTTPOptions, fresh bool) http.Handle
 		user, newSession, newRefresh, err := validate(r.Context(), session, refresh)
 		if err != nil {
 			options.logError("RequireAuth: session validation failed", "error", err)
-			options.handleError(w, r, http.StatusInternalServerError)
+			options.handleError(w, r, http.StatusServiceUnavailable)
 			return
 		}
 		if user == nil {
@@ -133,11 +131,7 @@ func EnsureSessionKnown(next http.Handler, options HTTPOptions) http.Handler {
 		newSession, newRefresh, err := options.Manager.EnsureKnown(r.Context(), session, refresh)
 		if err != nil {
 			options.logError("EnsureSessionKnown: validate session", "error", err)
-			status := options.EnsureKnownFailureStatus
-			if status == 0 {
-				status = http.StatusInternalServerError
-			}
-			options.handleError(w, r, status)
+			options.handleError(w, r, http.StatusServiceUnavailable)
 			return
 		}
 		SetRotatedSessionCookies(w, r, options, newSession, newRefresh)
@@ -163,6 +157,10 @@ func SetRotatedSessionCookies(w http.ResponseWriter, r *http.Request, options HT
 }
 
 func RedirectToAuthApp(w http.ResponseWriter, r *http.Request, options HTTPOptions) {
+	if r.Method != http.MethodGet || strings.Contains(r.Header.Get("Accept"), "application/json") || r.Header.Get("X-Requested-With") == "XMLHttpRequest" {
+		options.handleError(w, r, http.StatusUnauthorized)
+		return
+	}
 	publicBaseURL := strings.TrimRight(options.PublicBaseURL, "/")
 	if publicBaseURL == "" {
 		scheme := "https"

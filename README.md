@@ -16,3 +16,10 @@ gestion générique des sessions.
 templ generate
 go test ./...
 ```
+
+`dbready` vérifie avec le pool applicatif les droits nécessaires au runtime et
+expose un handler `/ready` (200/503), sans diagnostics SQL publics. `dbschema`
+adapte les migrations embarquées à un namespace configuré, en citant les
+identifiants numériques et en remappant les rôles de tâche injectés. Les erreurs
+techniques de validation de session produisent un 503 ; une navigation anonyme
+est redirigée vers auth-app, tandis qu'une requête JSON reçoit un 401.

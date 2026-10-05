@@ -52,7 +52,7 @@ func TestEnsureSessionKnownDoesNotReplaceCookieOnDependencyFailure(t *testing.T)
 	req.AddCookie(&http.Cookie{Name: "session", Value: "possibly-valid"})
 	recorder := httptest.NewRecorder()
 	handler.ServeHTTP(recorder, req)
-	if recorder.Code != http.StatusInternalServerError {
+	if recorder.Code != http.StatusServiceUnavailable {
 		t.Fatalf("status = %d", recorder.Code)
 	}
 	if got := recorder.Header().Get("Set-Cookie"); got != "" {
@@ -60,7 +60,7 @@ func TestEnsureSessionKnownDoesNotReplaceCookieOnDependencyFailure(t *testing.T)
 	}
 }
 
-func TestEnsureSessionKnownUsesConfiguredFailureStatus(t *testing.T) {
+func TestEnsureSessionKnownDoesNotMisclassifyDependencyFailure(t *testing.T) {
 	m := testManager(t, func(context.Context, string, string) (*authapp.SessionValidateResponse, error) {
 		return nil, authapp.ErrUnavailable
 	}, nil, ReturnRoleError)
@@ -76,7 +76,7 @@ func TestEnsureSessionKnownUsesConfiguredFailureStatus(t *testing.T) {
 	req.AddCookie(&http.Cookie{Name: "session", Value: "possibly-valid"})
 	recorder := httptest.NewRecorder()
 	handler.ServeHTTP(recorder, req)
-	if recorder.Code != http.StatusUnauthorized {
+	if recorder.Code != http.StatusServiceUnavailable {
 		t.Fatalf("status = %d", recorder.Code)
 	}
 	if got := recorder.Header().Get("Set-Cookie"); got != "" {
@@ -99,5 +99,23 @@ func TestEnsureSessionCookieCreatesSecureAnonymousSession(t *testing.T) {
 	handler.ServeHTTP(recorder, httptest.NewRequest(http.MethodGet, "https://app.test/", nil))
 	if !strings.Contains(recorder.Header().Get("Set-Cookie"), "Secure") {
 		t.Fatalf("Set-Cookie = %q", recorder.Header().Get("Set-Cookie"))
+	}
+}
+
+func TestAuthenticationRedirectPolicy(t *testing.T) {
+	for _, tc := range []struct {
+		method, accept string
+		status         int
+	}{{"GET", "text/html", 303}, {"GET", "application/json", 401}, {"POST", "", 401}} {
+		rr := httptest.NewRecorder()
+		r := httptest.NewRequest(tc.method, "https://task.example/private", nil)
+		r.Header.Set("Accept", tc.accept)
+		RedirectToAuthApp(rr, r, HTTPOptions{PublicBaseURL: "https://task.example", AuthPublicURL: "https://auth.task.example"})
+		if rr.Code != tc.status {
+			t.Fatalf("%s %s: %d", tc.method, tc.accept, rr.Code)
+		}
+		if tc.status == 303 && !strings.HasPrefix(rr.Header().Get("Location"), "https://auth.task.example/login/") {
+			t.Fatal(rr.Header())
+		}
 	}
 }
