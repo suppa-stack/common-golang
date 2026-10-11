@@ -1,0 +1,47 @@
+package ui
+
+// SSEAvailabilityDialogProps contains host-localized labels for the shared
+// connection blocker. Render it once, outside all replaceable fragments.
+type SSEAvailabilityDialogProps struct {
+  ID string
+  ConnectingTitle string
+  ConnectingMessage string
+  ReconnectingTitle string
+  ReconnectingMessage string
+  ResyncTitle string
+  ResyncMessage string
+  AuthTitle string
+  AuthMessage string
+  ForbiddenTitle string
+  ForbiddenMessage string
+  LoginLabel string
+}
+
+templ SSEAvailabilityDialog(props SSEAvailabilityDialogProps) {
+  <dialog
+    id={ props.ID }
+    open
+    tabindex="-1"
+    class="sse-availability-dialog fixed inset-0 m-0 flex h-dvh w-screen max-h-none max-w-none items-center justify-center border-0 bg-base-200 p-6 text-base-content"
+    aria-modal="true"
+    aria-labelledby={ props.ID + "-title" }
+    aria-describedby={ props.ID + "-message" }
+    data-connecting-title={ props.ConnectingTitle }
+    data-connecting-message={ props.ConnectingMessage }
+    data-reconnecting-title={ props.ReconnectingTitle }
+    data-reconnecting-message={ props.ReconnectingMessage }
+    data-resync-title={ props.ResyncTitle }
+    data-resync-message={ props.ResyncMessage }
+    data-auth-title={ props.AuthTitle }
+    data-auth-message={ props.AuthMessage }
+    data-forbidden-title={ props.ForbiddenTitle }
+    data-forbidden-message={ props.ForbiddenMessage }
+  >
+    <div class="max-w-lg text-center" role="status" aria-live="polite" aria-atomic="true">
+      <span class="loading loading-spinner loading-lg text-primary" aria-hidden="true"></span>
+      <h2 id={ props.ID + "-title" } data-sse-title class="mt-5 text-xl font-semibold">{ props.ConnectingTitle }</h2>
+      <p id={ props.ID + "-message" } data-sse-message class="mt-3">{ props.ConnectingMessage }</p>
+      <a data-sse-login hidden class="btn btn-primary mt-6">{ props.LoginLabel }</a>
+    </div>
+  </dialog>
+}

@@ -12,6 +12,11 @@ Les applications consommatrices conservent leurs règles de rôles et leurs
 handlers métier ; elles ne doivent pas recopier les contrats réseau ni la
 gestion générique des sessions.
 
+`ui.SSEAvailabilityDialog` rend la modale globale de connexion avec les textes
+localisés par l'application. La placer hors de tout fragment et utiliser
+`sseRecovery.dialogId` dans `common-frontend` : le runtime gère la top layer,
+le blocage du contenu et la fermeture après resynchronisation confirmée.
+
 ```sh
 templ generate
 go test ./...
