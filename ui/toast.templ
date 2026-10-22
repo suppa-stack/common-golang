@@ -5,10 +5,13 @@ templ Toast() {
 		<template x-for="toast in store.toasts" :key="toast.id">
 			<div
 				class="alert relative overflow-hidden"
-				:class="'alert-' + toast.type"
+				:class="toast.type === 'error' ? 'alert-error' : toast.type === 'success' ? 'alert-success' : toast.type === 'warning' ? 'alert-warning' : toast.type === 'debug' ? 'alert-debug' : 'alert-info'"
+				:role="toast.type === 'error' ? 'alert' : 'status'"
+				:aria-live="toast.type === 'error' ? 'assertive' : 'polite'"
 				@mouseenter="store.pauseTimer(toast.id)"
 				@mouseleave="store.resumeTimer(toast.id)"
 			>
+				<svg x-show="toast.type === 'error'" aria-hidden="true" focusable="false" class="shrink-0" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
 				<span x-text="toast.message"></span>
 				<button
 					type="button"
