@@ -29,7 +29,45 @@ func Toast() templ.Component {
 			templ_7745c5c3_Var1 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<div id=\"toast-container\" popover=\"manual\" class=\"toast toast-top toast-end z-50 m-0 border-0 bg-transparent p-0 shadow-none\" x-data=\"toastContainer\"><template x-for=\"toast in store.toasts\" :key=\"toast.id\"><div class=\"alert relative overflow-hidden\" :class=\"toast.type === 'error' ? 'alert-error' : toast.type === 'success' ? 'alert-success' : toast.type === 'warning' ? 'alert-warning' : toast.type === 'debug' ? 'alert-debug' : 'alert-info'\" :role=\"toast.type === 'error' ? 'alert' : 'status'\" :aria-live=\"toast.type === 'error' ? 'assertive' : 'polite'\" @mouseenter=\"store.pauseTimer(toast.id)\" @mouseleave=\"store.resumeTimer(toast.id)\"><svg x-show=\"toast.type === 'error'\" aria-hidden=\"true\" focusable=\"false\" class=\"shrink-0\" xmlns=\"http://www.w3.org/2000/svg\" width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><circle cx=\"12\" cy=\"12\" r=\"10\"></circle><line x1=\"12\" y1=\"8\" x2=\"12\" y2=\"12\"></line><line x1=\"12\" y1=\"16\" x2=\"12.01\" y2=\"16\"></line></svg> <span x-text=\"toast.message\"></span> <button type=\"button\" class=\"btn btn-xs btn-ghost btn-circle ml-auto shrink-0\" @click=\"store.removeToast(toast.id)\" aria-label=\"Close\"><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"14\" height=\"14\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M18 6 6 18\"></path><path d=\"m6 6 12 12\"></path></svg></button><div class=\"absolute bottom-0 left-0 h-0.5 bg-current opacity-50 w-full\" :style=\"'animation: toast-shrink ' + toast.duration + 'ms linear forwards; animation-play-state: ' + (toast.paused ? 'paused' : 'running') + ';'\"></div></div></template></div>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<div id=\"toast-container\" popover=\"manual\" class=\"toast toast-top toast-end z-50 m-0 border-0 bg-transparent p-0 shadow-none\" x-data=\"toastContainer\"><template x-for=\"toast in store.toasts\" :key=\"toast.id\">")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = toastCard().Render(ctx, templ_7745c5c3_Buffer)
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "</template></div>")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		return nil
+	})
+}
+
+// toastCard keeps global and modal toast presentation identical.
+func toastCard() templ.Component {
+	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
+		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
+		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {
+			return templ_7745c5c3_CtxErr
+		}
+		templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer := templruntime.GetBuffer(templ_7745c5c3_W)
+		if !templ_7745c5c3_IsBuffer {
+			defer func() {
+				templ_7745c5c3_BufErr := templruntime.ReleaseBuffer(templ_7745c5c3_Buffer)
+				if templ_7745c5c3_Err == nil {
+					templ_7745c5c3_Err = templ_7745c5c3_BufErr
+				}
+			}()
+		}
+		ctx = templ.InitializeContext(ctx)
+		templ_7745c5c3_Var2 := templ.GetChildren(ctx)
+		if templ_7745c5c3_Var2 == nil {
+			templ_7745c5c3_Var2 = templ.NopComponent
+		}
+		ctx = templ.ClearChildren(ctx)
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, "<div class=\"alert flex items-start gap-3 relative overflow-hidden\" :class=\"toast.type === 'error' ? 'alert-error' : toast.type === 'success' ? 'alert-success' : toast.type === 'warning' ? 'alert-warning' : toast.type === 'debug' ? 'alert-debug' : 'alert-info'\" :role=\"toast.type === 'error' ? 'alert' : 'status'\" :aria-live=\"toast.type === 'error' ? 'assertive' : 'polite'\" @mouseenter=\"store.pauseTimer(toast.id)\" @mouseleave=\"store.resumeTimer(toast.id)\"><svg x-show=\"toast.type === 'error'\" aria-hidden=\"true\" focusable=\"false\" class=\"h-6 w-6 shrink-0\" xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\"><circle cx=\"12\" cy=\"12\" r=\"10\"></circle><path d=\"M12 7v6m0 4h.01\"></path></svg> <span class=\"min-w-0 flex-1 whitespace-normal break-words\" x-text=\"toast.message\"></span> <button type=\"button\" class=\"btn btn-xs btn-ghost btn-circle ml-auto shrink-0\" @click=\"store.removeToast(toast.id)\" aria-label=\"Close\"><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"14\" height=\"14\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M18 6 6 18\"></path><path d=\"m6 6 12 12\"></path></svg></button><div class=\"absolute bottom-0 left-0 h-0.5 bg-current opacity-50 w-full\" :style=\"'animation: toast-shrink ' + toast.duration + 'ms linear forwards; animation-play-state: ' + (toast.paused ? 'paused' : 'running') + ';'\"></div></div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
